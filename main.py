@@ -18,7 +18,7 @@ class User(BaseModel):
     password: str
 
 # connection_string = 'DRIVER={ODBC Driver 17 for SQL Server};Server=tcp:dreamlabdb-server.database.windows.net,1433;Initial Catalog=dreamlabdb;Persist Security Info=False;User ID=luis;Password=Lucman615.;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
-connection_string = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=dreamlabdb-server.database.windows.net;DATABASE=dreamlabdb;UID=luis;PWD=Lucman615.;'
+connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
 
 
 @app.get("/")
