@@ -23,7 +23,7 @@ connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "V2"}
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
