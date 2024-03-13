@@ -40,17 +40,21 @@ async def chat(chat_request: ChatRequest):
 # login route
 @app.post("/login")
 async def auth(user: User, response: Response):
-    conn = pyodbc.connect(connection_string) 
-    cursor = conn.cursor()
+    try: 
+        conn = pyodbc.connect(connection_string) 
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM dbo.Users")
-    columns = [column[0] for column in cursor.description]  # Get column names
-    results = [dict(zip(columns, row)) for row in cursor.fetchall()] 
+        cursor.execute("SELECT * FROM dbo.Users")
+        columns = [column[0] for column in cursor.description]  # Get column names
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()] 
 
-    conn.close()
+        conn.close()
 
-    if results[0]["username"] == user.username and results[0]["password"] == user.password:
-        return {"message": "Logged in"}
-    else:
-        response.status_code = 401
-        return {"error": "Unauthorized"}
+        if results[0]["username"] == user.username and results[0]["password"] == user.password:
+            return {"message": "Logged in"}
+        else:
+            response.status_code = 401
+            return {"error": "Unauthorized"}
+    except Exception as e:
+        response.status_code = 500
+        return {"error": str(e)}
