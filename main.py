@@ -22,7 +22,7 @@ connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
 
 @app.get("/")
 async def root():
-    return {"message": "V3"}
+    return {"message": "V4"}
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
@@ -56,4 +56,4 @@ async def auth(user: User, response: Response):
             return {"error": "Unauthorized"}
     except Exception as e:
         response.status_code = 500
-        return {"error": str(e)}
+        return {"error": str(e), "drivers": pyodbc.drivers()}
