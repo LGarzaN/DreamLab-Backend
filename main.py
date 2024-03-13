@@ -17,13 +17,12 @@ class User(BaseModel):
     username: str
     password: str
 
-# connection_string = 'DRIVER={ODBC Driver 17 for SQL Server};Server=tcp:dreamlabdb-server.database.windows.net,1433;Initial Catalog=dreamlabdb;Persist Security Info=False;User ID=luis;Password=Lucman615.;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
 connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
 
 
 @app.get("/")
 async def root():
-    return {"message": "V2"}
+    return {"message": "V3"}
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
