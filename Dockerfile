@@ -1,6 +1,7 @@
 FROM python:3.11
 
-RUN apt-get update && apt-get install -y unixodbc unixodbc-dev
+RUN apt-get update \
+        && apt-get install -y --no-install-recommends build-essential gcc unixodbc-dev 
 
 WORKDIR /code
 
