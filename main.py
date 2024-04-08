@@ -1,33 +1,22 @@
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, Depends, Header
 import requests
-from pydantic import BaseModel
 from dotenv import load_dotenv
-import pyodbc, struct
-import os
+from api.middleware.apikey import check_api_key
+from models import User, ChatRequest
+from api.auth.login import login
 
 load_dotenv()
 
 app = FastAPI()
 
-class ChatRequest(BaseModel):
-    session_id: str
-    prompt: str
-
-class User(BaseModel):
-    username: str
-    password: str
-
-connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
-
-
 @app.get("/")
-async def root():
-    return {"message": "V4"}
+async def root(api_key_valid: bool = Depends(check_api_key)):    
+    return {"message": "Hello World"}
+
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
     chatbot_url = "https://dreamlabchatbot.azurewebsites.net/chat/"
-
     data = {
         "session_id": chat_request.session_id,
         "prompt": chat_request.prompt
@@ -39,21 +28,12 @@ async def chat(chat_request: ChatRequest):
 # login route
 @app.post("/login")
 async def auth(user: User, response: Response):
-    try: 
-        conn = pyodbc.connect(connection_string) 
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM dbo.Users")
-        columns = [column[0] for column in cursor.description]  # Get column names
-        results = [dict(zip(columns, row)) for row in cursor.fetchall()] 
-
-        conn.close()
-
-        if results[0]["username"] == user.username and results[0]["password"] == user.password:
+    try:
+        if await login(user):
             return {"message": "Logged in"}
         else:
             response.status_code = 401
-            return {"error": "Unauthorized"}
+        return {"error": "Unauthorized"}
     except Exception as e:
         response.status_code = 500
-        return {"error": str(e), "drivers": pyodbc.drivers()}
+        return {"error": str(e)}
