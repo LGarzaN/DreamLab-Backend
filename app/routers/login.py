@@ -1,5 +1,5 @@
-from models import User
-from db import DB
+from app.models import User
+from app.db import DB
 
 async def login(user: User, db:DB):
     try: 
