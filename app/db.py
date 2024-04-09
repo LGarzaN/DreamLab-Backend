@@ -8,8 +8,12 @@ connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")
 
 class DB:
     def __init__(self):
-        self.conn = pyodbc.connect(connection_string)
-        self.cursor = self.conn.cursor()
+        try:
+            self.conn = pyodbc.connect(connection_string)
+            self.cursor = self.conn.cursor()
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            self.conn = None
 
     async def execute_query(self, query, params=None):
         try:
