@@ -5,3 +5,4 @@ requests==2.31.0
 fastapi==0.109.2
 pyodbc
 gunicorn
+python-jose[cryptography]
