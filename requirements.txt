@@ -6,3 +6,4 @@ fastapi==0.109.2
 pyodbc
 gunicorn
 python-jose[cryptography]
+bcrypt

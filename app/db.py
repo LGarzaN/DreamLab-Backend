@@ -17,11 +17,26 @@ class DB:
 
     async def execute_query(self, query, params=None):
         try:
+            print(f"Executing query: {query}")
             if params:
+                print(params)
                 self.cursor.execute(query, params)
             else:
                 self.cursor.execute(query)
             return self.cursor.fetchall()
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            return None
+        
+    async def execute_query_insert(self, query, params=None):
+        try:
+            print(f"Executing query: {query}")
+            if params:
+                self.cursor.execute(query, params)
+            else:
+                self.cursor.execute(query)
+            self.conn.commit()
+            return self.cursor.rowcount
         except pyodbc.Error as e:
             print(f"Database error: {e}")
             return None
