@@ -7,14 +7,12 @@ from .routers import reservations, login
 
 app = FastAPI()
 
-db = DB()
-
 app.include_router(reservations.router)
 app.include_router(login.router)
 
 @app.get("/")
 async def root():    
-    return {"message": "V5"}
+    return {"message": "V6"}
 
 
 @app.post("/chat")
@@ -26,8 +24,3 @@ async def chat(chat_request: ChatRequest):
     }
     response = requests.post(chatbot_url, json=data)
     return response.json()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    db.close()
