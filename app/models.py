@@ -3,8 +3,8 @@ from pydantic import BaseModel
 class User(BaseModel):
     username: str
     password: str
-    #optional fields
     name: str = None
+    roleId: int = 0
     priority: int = 0
     profile_picture: str = None
 

@@ -3,8 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.db import DB
 from app.dependencies import check_api_key
 
-db = DB()
-
 router = APIRouter(
     prefix="/reservations",
     tags=["reservations"],
@@ -65,47 +63,55 @@ adminReservations = [
 #ADMIN ROUTE
 @router.get("/")
 async def get_reservations():
-    query = '''
-    SELECT 
-    R.user_requirements AS user_requirements,
-    S.day AS day,
-    S.start_hour AS start_hour,
-    S.end_hour AS end_hour,
-    SP.name AS space_name
-    FROM 
-        RESERVATION R
-    JOIN 
-        SCHEDULES S ON R.schedule_id = S.schedule_id
-    JOIN 
-        SPACES SP ON R.space_id = SP.space_id
-    ORDER BY 
-        S.day DESC, S.start_hour DESC
-    LIMIT 150;
-    '''
-    #results = await db.execute_query(query)
-    return adminReservations
+    try:
+        async with DB() as db:
+            query = '''
+            SELECT 
+            R.user_requirements AS user_requirements,
+            S.day AS day,
+            S.start_hour AS start_hour,
+            S.end_hour AS end_hour,
+            SP.name AS space_name
+            FROM 
+                RESERVATION R
+            JOIN 
+                SCHEDULES S ON R.schedule_id = S.schedule_id
+            JOIN 
+                SPACES SP ON R.space_id = SP.space_id
+            ORDER BY 
+                S.day DESC, S.start_hour DESC
+            LIMIT 150;
+            '''
+            #results = await db.execute_query(query)
+            return adminReservations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{user_id}")
 async def get_reservations(user_id: int):
-    query = '''
-    SELECT 
-    R.user_requirements AS user_requirements,
-    S.day AS day,
-    S.start_hour AS start_hour,
-    S.end_hour AS end_hour,
-    SP.name AS space_name
-    FROM 
-        RESERVATION R
-    JOIN 
-        SCHEDULES S ON R.schedule_id = S.schedule_id
-    JOIN 
-        SPACES SP ON R.space_id = SP.space_id
-    WHERE 
-        R.user_id = [your_user_id];
-    ORDER BY 
-        S.day DESC, S.start_hour DESC;
-    '''
-    # params = (user_id)
-    # results = await db.execute_query(query, params)
-    return usrReservations
+    try:
+        async with DB() as db:
+            query = '''
+            SELECT 
+            R.user_requirements AS user_requirements,
+            S.day AS day,
+            S.start_hour AS start_hour,
+            S.end_hour AS end_hour,
+            SP.name AS space_name
+            FROM 
+                RESERVATION R
+            JOIN 
+                SCHEDULES S ON R.schedule_id = S.schedule_id
+            JOIN 
+                SPACES SP ON R.space_id = SP.space_id
+            WHERE 
+                R.user_id = [your_user_id];
+            ORDER BY 
+                S.day DESC, S.start_hour DESC;
+            '''
+            # params = (user_id)
+            # results = await db.execute_query(query, params)
+            return usrReservations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
