@@ -60,6 +60,17 @@ adminReservations = [
     }
 ]
 
+@router.get("/schedule/{area_id}")
+async def get_Schedule(area_id: int):
+    try:
+        async with DB() as db:
+            query = "SELECT * FROM SCHEDULES WHERE area_id = ?"
+            params = (area_id)
+            results = await db.execute_query(query, params)
+            return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 #ADMIN ROUTE
 @router.get("/")
 async def get_reservations():

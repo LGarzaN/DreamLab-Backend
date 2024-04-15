@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.models import User
 from app.db import DB
 from jose import jwt
 from dotenv import load_dotenv
+from app.dependencies import check_api_key
 import os
 import bcrypt
 
@@ -11,11 +12,12 @@ load_dotenv()
 
 router = APIRouter(
     prefix="/login",
-    tags=["login"]
+    tags=["login"],
+    dependencies=[Depends(check_api_key)]
 )
 
 @router.post("/")
-async def auth(user: User):
+async def login(user: User):
     try: 
         async with DB() as db:
             query = "SELECT * FROM [dbo].[User] WHERE Username = ?"
@@ -27,6 +29,9 @@ async def auth(user: User):
                     "username": user.username, 
                     "userId": results[0][0],
                     "name": results[0][3],
+                    "role": results[0][4],
+                    "priority": results[0][5],
+                    "profile picture": results[0][6],
                     }, os.getenv('JWT_SECRET'), algorithm='HS256')
                 return {"token": token}
             else:

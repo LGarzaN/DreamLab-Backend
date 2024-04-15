@@ -25,7 +25,6 @@ class DB:
         try:
             cursor = self.connection.cursor()
             if params:
-                print(params)
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
@@ -41,7 +40,7 @@ class DB:
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
-            self.conn.commit()
+            self.connection.commit()
             return cursor.rowcount
         except pyodbc.Error as e:
             print(f"Database error: {e}")
