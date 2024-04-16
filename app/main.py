@@ -31,13 +31,20 @@ async def chat(chat_request: ChatRequest):
 async def schedules():
     try:
         hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
-        yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        new_day = (datetime.datetime.now() + datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+        today = (datetime.datetime.now().strftime("%Y-%m-%d"))
+        new_day = datetime.datetime.now() + datetime.timedelta(days=5)
+        
         async with DB() as db:
-            delete_query = "DELETE FROM [dbo].[Schedule] WHERE Day < ?"
-            delete_params = (yesterday)
+            delete_query = "DELETE FROM [dbo].[Schedule] WHERE Day < ? and Occupied = 0;"
+            delete_params = (today,)
             await db.execute_query_insert(query=delete_query, params=delete_params)
             print("Deleted unused schedules from yesterday")
+
+            if new_day.weekday() == 5 or new_day.weekday() == 6:
+                print("It's the weekend, no schedules will be added")
+                return
+            
+            new_day = new_day.strftime("%Y-%m-%d")
 
             string_query = ""
             for i in range(1, 16):
