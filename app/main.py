@@ -27,7 +27,7 @@ async def chat(chat_request: ChatRequest):
     return response.json()
 
 @app.on_event("startup")
-@repeat_at(cron='0 2 * * *') 
+@repeat_at(cron='0 6 * * *') 
 async def schedules():
     try:
         hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
