@@ -64,7 +64,7 @@ adminReservations = [
 async def get_Schedule(area_id: int):
     try:
         async with DB() as db:
-            query = "SELECT Day, StartHour, EndHour FROM [dbo].[Schedule] WHERE SpaceId = ?"
+            query = "SELECT Day, StartHour, EndHour FROM [dbo].[Schedule] WHERE SpaceId = ? and Occupied = 0;"
             params = (area_id,)
             results = await db.execute_query(query, params)
 
