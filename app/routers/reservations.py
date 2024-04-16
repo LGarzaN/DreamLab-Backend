@@ -60,6 +60,27 @@ adminReservations = [
     }
 ]
 
+@router.get("/schedule/{area_id}")
+async def get_Schedule(area_id: int):
+    try:
+        async with DB() as db:
+            query = "SELECT Day, StartHour, EndHour FROM [dbo].[Schedule] WHERE SpaceId = ?"
+            params = (area_id,)
+            results = await db.execute_query(query, params)
+
+            # Format results
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Day': row[0].strftime('%Y-%m-%d'),
+                    'StartHour': row[1].strftime('%H:%M'),
+                    'EndHour': row[2].strftime('%H:%M'),
+                })
+            
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 #ADMIN ROUTE
 @router.get("/")
 async def get_reservations():
