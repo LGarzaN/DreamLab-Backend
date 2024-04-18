@@ -20,7 +20,7 @@ router = APIRouter(
 async def login(user: User):
     try: 
         async with DB() as db:
-            query = "SELECT * FROM [dbo].[User] WHERE Username = ?"
+            query = "EXEC SearchUser @p_Username = ?;"
             params = (user.username)
             results = await db.execute_query(query, params)
 

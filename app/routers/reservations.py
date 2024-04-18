@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-
+from app.models import Reservation
 from app.db import DB
 from app.dependencies import check_api_key
+from uuid import uuid4
+from app.functions import get_requirements_query
 
 router = APIRouter(
     prefix="/reservations",
@@ -9,62 +11,11 @@ router = APIRouter(
     dependencies=[Depends(check_api_key)]
 )
 
-usrReservations = [
-    {
-        "user_requirements": "Requirement1",
-        "day": "2024-04-09",
-        "start_hour": "09:00:00",
-        "end_hour": "11:00:00",
-        "space_name": "SpaceName1"
-    },
-    {
-        "user_requirements": "Requirement2",
-        "day": "2024-04-10",
-        "start_hour": "13:00:00",
-        "end_hour": "15:00:00",
-        "space_name": "SpaceName2"
-    },
-    {
-        "user_requirements": "Requirement3",
-        "day": "2024-04-11",
-        "start_hour": "10:00:00",
-        "end_hour": "12:00:00",
-        "space_name": "SpaceName3"
-    }
-]
-
-adminReservations = [
-    {
-        "user_id": 1,
-        "user_requirements": "Requirement1",
-        "day": "2024-04-09",
-        "start_hour": "09:00:00",
-        "end_hour": "11:00:00",
-        "space_name": "SpaceName1"
-    },
-    {
-        "user_id": 2,
-        "user_requirements": "Requirement2",
-        "day": "2024-04-10",
-        "start_hour": "13:00:00",
-        "end_hour": "15:00:00",
-        "space_name": "SpaceName2"
-    },
-    {
-        "user_id": 3,
-        "user_requirements": "Requirement3",
-        "day": "2024-04-11",
-        "start_hour": "10:00:00",
-        "end_hour": "12:00:00",
-        "space_name": "SpaceName3"
-    }
-]
-
 @router.get("/schedule/{area_id}")
 async def get_Schedule(area_id: int):
     try:
         async with DB() as db:
-            query = "SELECT Day, StartHour, EndHour FROM [dbo].[Schedule] WHERE SpaceId = ? and Occupied = 0;"
+            query = "EXEC GetSchedule @p_SpaceId = ?"
             params = (area_id,)
             results = await db.execute_query(query, params)
 
@@ -72,67 +23,81 @@ async def get_Schedule(area_id: int):
             formatted_results = []
             for row in results:
                 formatted_results.append({
-                    'Day': row[0].strftime('%Y-%m-%d'),
-                    'StartHour': row[1].strftime('%H:%M'),
-                    'EndHour': row[2].strftime('%H:%M'),
+                    'ScheduleId': row[0],
+                    'Day': row[1].strftime('%Y-%m-%d'),
+                    'StartHour': row[2].strftime('%H:%M'),
+                    'EndHour': row[3].strftime('%H:%M'),
                 })
-            
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/create")
+async def create_reservation(res: Reservation):
+    """
+    Crear ReservationGroup
+    - Agregar reservacion a tabla de Reservation
+    - Marcar Schedule como ocupado
+    Agregar requerimientos a UserRequirements
+    - Actualizar tabla de Statistics
 
-#ADMIN ROUTE
-@router.get("/")
-async def get_reservations():
+    formato de userRequirements: "1=1,2=3,4=6"
+    """
     try:
         async with DB() as db:
-            query = '''
-            SELECT 
-            R.user_requirements AS user_requirements,
-            S.day AS day,
-            S.start_hour AS start_hour,
-            S.end_hour AS end_hour,
-            SP.name AS space_name
-            FROM 
-                RESERVATION R
-            JOIN 
-                SCHEDULES S ON R.schedule_id = S.schedule_id
-            JOIN 
-                SPACES SP ON R.space_id = SP.space_id
-            ORDER BY 
-                S.day DESC, S.start_hour DESC
-            LIMIT 150;
-            '''
-            #results = await db.execute_query(query)
-            return adminReservations
+            group_code = str(uuid4())[:7]
+            query ='''
+                DECLARE @GroupID INT;
+                INSERT INTO [dbo].[ReservationGroup] (GroupCode)
+                OUTPUT INSERTED.GroupID
+                VALUES (?);
+
+                SET @GroupID = SCOPE_IDENTITY(); 
+
+                INSERT INTO [dbo].[Reservation] (GroupId, UserId, SpaceId, ScheduleId, UserRequirements) 
+                VALUES (@GroupID, ?, ?, ?, '');
+
+                UPDATE [dbo].[Schedule] SET Occupied = 1 WHERE ScheduleId = ?;
+
+                MERGE INTO [dbo].[Statistic] AS target
+                USING (SELECT ? AS UserId) AS source (UserId)
+                ON target.UserId = source.UserId
+                WHEN MATCHED THEN
+                    UPDATE SET Reservations = target.Reservations + 1,
+                            StudyHours = target.StudyHours + 1
+                WHEN NOT MATCHED THEN
+                    INSERT (UserId, Reservations, StudyHours)
+                    VALUES (source.UserId, 1, 1);
+
+              '''
+            query += get_requirements_query(res.user_requirements)
+            print(query)
+            params = (group_code, res.user_id, res.space_id, res.schedule_id, res.schedule_id, res.user_id)
+            results = await db.execute_query_insert(query=query, params=params)
+            return {"message": "Reservation created successfully", "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
+# Get reservations for a specific user
 @router.get("/{user_id}")
 async def get_reservations(user_id: int):
     try:
         async with DB() as db:
-            query = '''
-            SELECT 
-            R.user_requirements AS user_requirements,
-            S.day AS day,
-            S.start_hour AS start_hour,
-            S.end_hour AS end_hour,
-            SP.name AS space_name
-            FROM 
-                RESERVATION R
-            JOIN 
-                SCHEDULES S ON R.schedule_id = S.schedule_id
-            JOIN 
-                SPACES SP ON R.space_id = SP.space_id
-            WHERE 
-                R.user_id = [your_user_id];
-            ORDER BY 
-                S.day DESC, S.start_hour DESC;
-            '''
-            # params = (user_id)
-            # results = await db.execute_query(query, params)
-            return usrReservations
+            query = "EXEC GetReservationDetails @UserId = ?"
+            params = (user_id,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Day': row[0].strftime('%Y-%m-%d'),
+                    'StartHour': row[1].strftime('%H:%M'),
+                    'EndHour': row[2].strftime('%H:%M'),
+                    'SpaceName': row[3],
+                    'SpaceId': row[4],
+                    'RequirementsId': row[5],
+                    'RequirementsQuantity': row[6],
+                    'GroupCode': row[7]
+                })
+            return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
