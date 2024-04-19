@@ -17,3 +17,7 @@ class Reservation(BaseModel):
     schedule_id: int
     user_requirements: str = None
     space_id: int
+
+class DeleteReservation(BaseModel):
+    user_id: int
+    group_code: str

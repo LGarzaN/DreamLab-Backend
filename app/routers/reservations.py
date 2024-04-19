@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.models import Reservation
+from app.models import Reservation, DeleteReservation
 from app.db import DB
 from app.dependencies import check_api_key
 from uuid import uuid4
@@ -99,5 +99,18 @@ async def get_reservations(user_id: int):
                     'GroupCode': row[7]
                 })
             return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/")
+async def delete_reservation(body: DeleteReservation):
+    try:
+        print(body)
+        async with DB() as db:
+            query = "EXEC CancelReservation @groupCode = ?, @userId = ?;"
+            params = (body.group_code, body.user_id)
+            results = await db.execute_query_insert(query, params)
+            return {"message": "Reservation deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
