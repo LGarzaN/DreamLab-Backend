@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import requests
 from app.models import ChatRequest
 from fastapi_utilities import repeat_at
 from app.db import DB
 from .routers import reservations, login
 import datetime
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 app = FastAPI()
 
@@ -26,8 +27,27 @@ async def chat(chat_request: ChatRequest):
     response = requests.post(chatbot_url, json=data)
     return response.json()
 
+@app.get("/areas")
+async def get_areas():
+    try:
+        async with DB() as db:
+            query = "SELECT * FROM [dbo].[Space]"
+            results = await db.execute_query(query)
+            formatted_results = []
+            print(results)
+            for row in results:
+                formatted_results.append({
+                    'SpaceId': row[0],
+                    'SpaceName': row[1],
+                    'description': row[3],
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.on_event("startup")
-@repeat_at(cron='0 6 * * *') 
+@repeat_at(cron='0 6 * * *')
+@retry(stop=stop_after_attempt(5), wait=wait_exponential())
 async def schedules():
     try:
         hours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
@@ -58,3 +78,4 @@ async def schedules():
 
     except Exception as e:
         print(str(e))
+        raise e

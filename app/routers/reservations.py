@@ -70,7 +70,8 @@ async def create_reservation(res: Reservation):
                     VALUES (source.UserId, 1, 1);
 
               '''
-            query += get_requirements_query(res.user_requirements)
+            if len(res.user_requirements > 0):
+                query += get_requirements_query(res.user_requirements)
             print(query)
             params = (group_code, res.user_id, res.space_id, res.schedule_id, res.schedule_id, res.user_id)
             results = await db.execute_query_insert(query=query, params=params)
