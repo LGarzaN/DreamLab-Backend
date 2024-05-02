@@ -33,7 +33,7 @@ async def get_Zones():
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/space/{SpaceName}")
-async def get_spaceDescription(SpaceName: str):
+async def get_space_description(SpaceName: str):
     try:
         async with DB() as db:
             query = '''
@@ -67,7 +67,8 @@ async def get_schedule(SpaceId: int,Day: str):
         days_count = 7 - (actual_day - target_day)
 
     date = today + timedelta(days=days_count)
-    Day =  date.strftime('%Y-%m-%d')
+    final_day =  date.strftime('%Y-%m-%d')
+    print("Final_day: ", final_day)
     try:
         async with DB() as db:
             query = '''
@@ -75,7 +76,7 @@ async def get_schedule(SpaceId: int,Day: str):
                 FROM [dbo].[Schedule] 
                 WHERE [SpaceId] = ? AND [Day] = ? AND [Occupied] = 0;
                 '''
-            params = (SpaceId ,Day,)
+            params = (SpaceId ,final_day,)
             results = await db.execute_query(query, params)
             formatted_results = []
             print(results)
@@ -89,7 +90,7 @@ async def get_schedule(SpaceId: int,Day: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/schedulesprovider")
-async def get_schedulespro():
+async def get_schedules_pro():
     try:
         async with DB() as db:
             query = "SELECT * FROM [dbo].[Schedule]"
@@ -101,8 +102,8 @@ async def get_schedulespro():
                     'ScheduleId': row[0],
                     'SpaceId': row[1],
                     'Day': row[3],
-                    'StartHour': row[4].strftime('%H:%M'),
-                    'EndHour': row[5].strftime('%H:%M'),
+                    'StartHour': row[4].strftime('%H:%M') if isinstance(row[4], datetime.datetime) else None,
+                    'EndHour': row[5].strftime('%H:%M') if isinstance(row[5], datetime.datetime) else None,
                     'Occupied': row[6]
                 })
             return formatted_results
