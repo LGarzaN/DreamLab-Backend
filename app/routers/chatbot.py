@@ -56,7 +56,7 @@ async def get_space_description(SpaceName: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/schedules/{SpaceId}/{Day}")
-async def get_schedule(SpaceId: int,Day: str):
+async def get_schedule(SpaceId: int, Day: str):
     today = datetime.now()
     actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
     target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(Day.lower())
@@ -67,7 +67,7 @@ async def get_schedule(SpaceId: int,Day: str):
         days_count = 7 - (actual_day - target_day)
 
     date = today + timedelta(days=days_count)
-    final_day =  date.strftime('%Y-%m-%d')
+    final_day = date.strftime('%Y-%m-%d')
     try:
         async with DB() as db:
             query = '''
@@ -75,18 +75,25 @@ async def get_schedule(SpaceId: int,Day: str):
                 FROM [dbo].[Schedule] 
                 WHERE [SpaceId] = ? AND [Day] = ? AND [Occupied] = 0;
                 '''
-            params = (SpaceId ,final_day,)
+            params = (SpaceId, final_day,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            print(results)
+            available_hours = []
+
             for row in results:
+                available_hours.append(row[0])  # Guardar todas las horas disponibles
                 formatted_results.append({
                     'StartHour': row[0],
                     'EndHour': row[1]
                 })
+
+            # Insertar la lista de horas disponibles como primer elemento del contenido
+            formatted_results.insert(0, {'StartHour': ",".join(map(str, available_hours)), 'EndHour': None})
+
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     
 @router.get("/requirements/{SpaceId}")
 async def get_space_requirements(SpaceId: int):
@@ -96,17 +103,31 @@ async def get_space_requirements(SpaceId: int):
             params = (SpaceId,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            print(results)
+            requirement_ids = []
+            requirements_text = []
+
             for row in results:
+                requirement_id = row[1]
+                requirement_name = row[2]
+                max_quantity = row[3]
+
+                requirement_ids.append(requirement_id)
+                requirements_text.append(f"{requirement_name} (Max {max_quantity})")
+
                 formatted_results.append({
                     'SpaceId': row[0],
-                    'RequirementId': row[1],
-                    'RequirementName': row[2],
-                    'MaxQuantity': row[3]
+                    'RequirementId': requirement_id,
+                    'RequirementName': requirement_name,
+                    'MaxQuantity': max_quantity
                 })
+
+            # Insertar la lista de IDs de requisitos como primer elemento del contenido
+            formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\n'.join(requirements_text)})
+
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/schedulesprovider")
 async def get_schedules_pro():
@@ -194,6 +215,7 @@ async def create_reservation_bot(res: ReservationBot):
 
     date = today + timedelta(days=days_count)
     dates[0] =  date.strftime('%Y-%m-%d')
+    dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
     try:
         async with DB() as db:
             query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
