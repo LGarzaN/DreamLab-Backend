@@ -31,6 +31,29 @@ async def get_Zones():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.get("/space/{SpaceName}")
+async def get_spaceDescription(SpaceName: str):
+    try:
+        async with DB() as db:
+            query = '''
+                SELECT [Description]
+                FROM [dbo].[Space]
+                WHERE LOWER(Name) = LOWER(?);
+            '''
+            params = (SpaceName,)
+            results = await db.execute_query(query, params)
+
+            # Format results
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Description': row[0]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
 @router.post("/create")
 async def create_reservation(res: Reservation):
     """
