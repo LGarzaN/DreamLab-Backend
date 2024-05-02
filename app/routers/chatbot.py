@@ -19,15 +19,13 @@ async def get_Zones():
                 SELECT [ZoneName], [Description] 
                 FROM [dbo].[Zone];
             '''
-            params = ()
-            results = await db.execute_query(query, params)
+            results = await db.execute_query(query)
 
             # Format results
             formatted_results = []
             for row in results:
                 formatted_results.append({
-                    'ZoneName': row[0],
-                    'Description': row[1],
+                    'Zone': f"{row[0]}: {row[1]}"
                 })
             return formatted_results
     except Exception as e:
