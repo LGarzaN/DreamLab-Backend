@@ -68,7 +68,6 @@ async def get_schedule(SpaceId: int,Day: str):
 
     date = today + timedelta(days=days_count)
     final_day =  date.strftime('%Y-%m-%d')
-    print("Final_day: ", final_day)
     try:
         async with DB() as db:
             query = '''
@@ -88,6 +87,26 @@ async def get_schedule(SpaceId: int,Day: str):
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/requirements/{SpaceId}")
+async def get_space_requirements(SpaceId: int):
+    try:
+        async with DB() as db:
+            query = "EXEC GetSpaceRequirements @SpaceId = ?"
+            params = (SpaceId,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+            print(results)
+            for row in results:
+                formatted_results.append({
+                    'SpaceId': row[0],
+                    'RequirementId': row[1],
+                    'RequirementName': row[2],
+                    'MaxQuantity': row[3]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/schedulesprovider")
 async def get_schedules_pro():
@@ -102,14 +121,13 @@ async def get_schedules_pro():
                     'ScheduleId': row[0],
                     'SpaceId': row[1],
                     'Day': row[2],
-                    'StartHour': row[3],
-                    'EndHour': row[4],
+                    'StartHour': row[3].strftime('%H:%M'),
+                    'EndHour': row[4].strftime('%H:%M'),
                     'Occupied': row[5]
                 })
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @router.post("/create")
 async def create_reservation(res: Reservation):
@@ -164,13 +182,25 @@ async def create_reservation_bot(res: ReservationBot):
     Ejemplo: "2021-06-01 08:00:00"
     """
     dates = res.schedule.split(" ")
+
+    today = datetime.now()
+    actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
+    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
+
+    if actual_day <= target_day:
+        days_count = target_day - actual_day
+    else:
+        days_count = 7 - (actual_day - target_day)
+
+    date = today + timedelta(days=days_count)
+    dates[0] =  date.strftime('%Y-%m-%d')
     try:
         async with DB() as db:
-            query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ?"
-            params = (dates[0], dates[1])
+            query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
+            params = (dates[0], dates[1], res.space_id)
             results = await db.execute_query(query, params)
             if len(results) == 0:
-                raise HTTPException(status_code=404, detail="Schedule not found")
+                raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
             schedule_id = results[0][0]
             return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements=res.user_requirements))
     except Exception as e:
