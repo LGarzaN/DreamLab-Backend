@@ -82,8 +82,8 @@ async def get_schedule(SpaceId: int,Day: str):
             print(results)
             for row in results:
                 formatted_results.append({
-                    'StartHour': row[0].strftime('%H:%M'),
-                    'EndHour': row[1].strftime('%H:%M')
+                    'StartHour': row[0],
+                    'EndHour': row[1]
                 })
             return formatted_results
     except Exception as e:
@@ -102,8 +102,8 @@ async def get_schedules_pro():
                     'ScheduleId': row[0],
                     'SpaceId': row[1],
                     'Day': row[3],
-                    'StartHour': row[4].strftime('%H:%M') if isinstance(row[4], datetime.datetime) else None,
-                    'EndHour': row[5].strftime('%H:%M') if isinstance(row[5], datetime.datetime) else None,
+                    'StartHour': row[4],
+                    'EndHour': row[5],
                     'Occupied': row[6]
                 })
             return formatted_results
