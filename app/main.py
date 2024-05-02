@@ -10,8 +10,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 app = FastAPI()
 
 app.include_router(reservations.router)
-app.include_router(login.router)
 app.include_router(chatbot.router)
+app.include_router(login.router)
 
 @app.get("/")
 async def root():

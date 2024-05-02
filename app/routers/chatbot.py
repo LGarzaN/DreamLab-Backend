@@ -4,6 +4,7 @@ from app.db import DB
 from app.dependencies import check_api_key
 from uuid import uuid4
 from app.functions import get_requirements_query
+from datetime import datetime, timedelta
 
 router = APIRouter(
     prefix="/chatbot",
@@ -36,7 +37,7 @@ async def get_spaceDescription(SpaceName: str):
     try:
         async with DB() as db:
             query = '''
-                SELECT [Description]
+                SELECT [SpaceId], [Description]
                 FROM [dbo].[Space]
                 WHERE LOWER(Name) = LOWER(?);
             '''
@@ -47,13 +48,68 @@ async def get_spaceDescription(SpaceName: str):
             formatted_results = []
             for row in results:
                 formatted_results.append({
-                    'Description': row[0]
+                    'SpaceId': row[0],
+                    'Description': row[1]
                 })
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/schedules/{SpaceId}/{Day}")
+async def get_schedule(SpaceId: int,Day: str):
+    today = datetime.now()
+    actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
+    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(Day.lower())
+
+    if actual_day <= target_day:
+        days_count = target_day - actual_day
+    else:
+        days_count = 7 - (actual_day - target_day)
+
+    date = today + timedelta(days=days_count)
+    Day =  date.strftime('%Y-%m-%d')
+    try:
+        async with DB() as db:
+            query = '''
+                SELECT [StartHour] 
+                FROM [dbo].[Schedule] 
+                WHERE [SpaceId] = ? AND [Day] = ? AND [Occupied] = 0;
+                '''
+            params = (SpaceId ,Day,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+            print(results)
+            for row in results:
+                formatted_results.append({
+                    'StartHour': row[0].strftime('%H:%M'),
+                    'EndHour': row[1].strftime('%H:%M')
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/schedulesprovider")
+async def get_schedulespro():
+    try:
+        async with DB() as db:
+            query = "SELECT * FROM [dbo].[Schedule]"
+            results = await db.execute_query(query)
+            formatted_results = []
+            print(results)
+            for row in results:
+                formatted_results.append({
+                    'ScheduleId': row[0],
+                    'SpaceId': row[1],
+                    'Day': row[3],
+                    'StartHour': row[4].strftime('%H:%M'),
+                    'EndHour': row[5].strftime('%H:%M'),
+                    'Occupied': row[6]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
+
 @router.post("/create")
 async def create_reservation(res: Reservation):
     """
