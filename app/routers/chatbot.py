@@ -72,7 +72,7 @@ async def get_schedule(SpaceId: int,Day: str):
     try:
         async with DB() as db:
             query = '''
-                SELECT [StartHour] 
+                SELECT [StartHour], [EndHour]
                 FROM [dbo].[Schedule] 
                 WHERE [SpaceId] = ? AND [Day] = ? AND [Occupied] = 0;
                 '''
@@ -101,10 +101,10 @@ async def get_schedules_pro():
                 formatted_results.append({
                     'ScheduleId': row[0],
                     'SpaceId': row[1],
-                    'Day': row[3],
-                    'StartHour': row[4],
-                    'EndHour': row[5],
-                    'Occupied': row[6]
+                    'Day': row[2],
+                    'StartHour': row[3],
+                    'EndHour': row[4],
+                    'Occupied': row[5]
                 })
             return formatted_results
     except Exception as e:
