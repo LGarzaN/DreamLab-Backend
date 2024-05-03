@@ -271,6 +271,36 @@ async def create_reservation_bot(res: ReservationBot):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/prueba/{schedule}/{requirements}")
+async def calculate_dates(schedule: str, user_requirements: str):
+    dates = schedule.split(" ")
+
+    today = datetime.now()
+    actual_day = today.weekday()  
+    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
+
+    if actual_day <= target_day:
+        days_count = target_day - actual_day
+    else:
+        days_count = 7 - (actual_day - target_day)
+
+    date = today + timedelta(days=days_count)
+    dates[0] = date.strftime('%Y-%m-%d')
+    dates[1] = "{:02d}:00:00".format(int(dates[1])) 
+
+    numbers_str, values_str = user_requirements.split()
+
+    numbers = list(map(int, numbers_str.split(',')))
+    values = list(map(int, values_str.split(',')))
+
+    result = ""
+    for number, value in zip(numbers, values):
+        result += f"{number}={value},"
+
+    result = result.rstrip(',')
+
+    return {"date_1": dates[0], "date_2": dates[1], "result": result}
+
 """
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
