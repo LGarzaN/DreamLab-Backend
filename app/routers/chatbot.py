@@ -266,7 +266,7 @@ async def create_reservation_bot(res: ReservationBot):
             schedule_id = results[0][0]
             return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements= "1=1,2=3,4=6"))
     except Exception as e:
-        raise HTTPException(status_code=500, detail= f"{res.user_id}, {res.space_id}, {schedule_id}, {res.user_requirements}, Otros: {dates[0]},  {dates[1]}, {schedule_id}, {result}")
+        raise HTTPException(status_code=f"{res.user_id}, {res.space_id}, {schedule_id}, {res.user_requirements}, Otros: {dates[0]},  {dates[1]}, {schedule_id}, {result}", detail= str(e))
 
 # Get reservations for a specific user
 @router.get("/{user_id}")
