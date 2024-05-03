@@ -242,6 +242,23 @@ async def create_reservation_bot(res: ReservationBot):
     dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
     """
 
+    # Dividir la cadena en dos listas
+    numbers_str, values_str = res.user_requirements.split()
+
+    # Convertir las cadenas de números a listas de enteros
+    numbers = list(map(int, numbers_str.split(',')))
+    values = list(map(int, values_str.split(',')))
+
+    # Iterar sobre las dos listas y formatear los elementos
+    result = ""
+    for number, value in zip(numbers, values):
+        result += f"{number}={value},"
+
+    # Eliminar la coma extra al final
+    result = result.rstrip(',')
+
+    print("Resultado:", result)
+
     try:
         async with DB() as db:
             query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
@@ -250,7 +267,7 @@ async def create_reservation_bot(res: ReservationBot):
             if len(results) == 0:
                 raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
             schedule_id = results[0][0]
-            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements=res.user_requirements))
+            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements=result))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
