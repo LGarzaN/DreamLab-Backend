@@ -214,7 +214,7 @@ async def create_reservation(res: Reservation):
             results = await db.execute_query_insert(query=query, params=params)
             return {"message": "Reservation created successfully", "results": results}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=f"500: {res.user_id}, {res.space_id}, {res.schedule_id}", detail=str(e))
     
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
