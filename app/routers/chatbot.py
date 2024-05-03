@@ -215,7 +215,7 @@ async def create_reservation(res: Reservation):
             return {"message": "Reservation created successfully", "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"fallo en create_reservation: {res.space_id}, {res.schedule_id}")
-    
+
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
     """
@@ -247,9 +247,59 @@ async def create_reservation_bot(res: ReservationBot):
             if len(results) == 0:
                 raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
             schedule_id = results[0][0]
+            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements=res.user_requirements))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+"""
+@router.post("/create/bot")
+async def create_reservation_bot(res: ReservationBot):
+
+    dates = res.schedule.split(" ")
+
+    today = datetime.now()
+    actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
+    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
+
+    if actual_day <= target_day:
+        days_count = target_day - actual_day
+    else:
+        days_count = 7 - (actual_day - target_day)
+
+    date = today + timedelta(days=days_count)
+    dates[0] =  date.strftime('%Y-%m-%d')
+    dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
+
+    # Dividir la cadena en dos listas
+    numbers_str, values_str = res.user_requirements.split()
+
+    # Convertir las cadenas de números a listas de enteros
+    numbers = list(map(int, numbers_str.split(',')))
+    values = list(map(int, values_str.split(',')))
+
+    # Iterar sobre las dos listas y formatear los elementos
+    result = ""
+    for number, value in zip(numbers, values):
+        result += f"{number}={value},"
+
+    # Eliminar la coma extra al final
+    result = result.rstrip(',')
+
+    print("Resultado:", result)
+
+    try:
+        async with DB() as db:
+            query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
+            params = (dates[0], dates[1], res.space_id)
+            results = await db.execute_query(query, params)
+            if len(results) == 0:
+                raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
+            schedule_id = results[0][0]
             return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements= "1=1,2=3,4=6"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+"""
+
 
 # Get reservations for a specific user
 @router.get("/{user_id}")
