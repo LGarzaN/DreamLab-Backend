@@ -264,7 +264,7 @@ async def create_reservation_bot(res: ReservationBot):
             if len(results) == 0:
                 raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
             schedule_id = results[0][0]
-            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements=res.user_requirements))
+            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements= result))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
