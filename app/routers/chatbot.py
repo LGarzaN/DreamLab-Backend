@@ -224,8 +224,10 @@ async def create_reservation_bot(res: ReservationBot):
     formato de schedule: "AAAA-MM-DD HH:MM:SS"
     Ejemplo: "2021-06-01 08:00:00"
     """
+    
     dates = res.schedule.split(" ")
 
+    """
     today = datetime.now()
     actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
     target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
@@ -238,6 +240,7 @@ async def create_reservation_bot(res: ReservationBot):
     date = today + timedelta(days=days_count)
     dates[0] =  date.strftime('%Y-%m-%d')
     dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
+    """
 
     try:
         async with DB() as db:
