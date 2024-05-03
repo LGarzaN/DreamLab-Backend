@@ -12,6 +12,28 @@ router = APIRouter(
     dependencies=[Depends(check_api_key)]
 )
 
+@router.get("/userid/{UserName}")
+async def get_userid(UserName: str):
+    try:
+        async with DB() as db:
+            query = '''
+                SELECT [UserId]
+                FROM [dbo].[User]
+                WHERE Username = ?;
+            '''
+            params = (UserName,)
+            results = await db.execute_query(query, params)
+
+            # Format results
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'UserId': row[0],
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/zones")
 async def get_Zones():
     try:
@@ -81,7 +103,7 @@ async def get_schedule(SpaceId: int, Day: str):
             available_hours = []
 
             for row in results:
-                available_hours.append(row[0])  # Guardar todas las horas disponibles
+                available_hours.append(row[0].strftime('%H:%M'))  # Guardar todas las horas disponibles
                 formatted_results.append({
                     'StartHour': row[0],
                     'EndHour': row[1]
@@ -122,7 +144,7 @@ async def get_space_requirements(SpaceId: int):
                 })
 
             # Insertar la lista de IDs de requisitos como primer elemento del contenido
-            formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\n'.join(requirements_text)})
+            formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\r\n'.join(requirements_text)})
 
             return formatted_results
     except Exception as e:
@@ -216,6 +238,24 @@ async def create_reservation_bot(res: ReservationBot):
     date = today + timedelta(days=days_count)
     dates[0] =  date.strftime('%Y-%m-%d')
     dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
+
+    # Dividir la cadena en dos listas
+    numbers_str, values_str = res.user_requirements.split()
+
+    # Convertir las cadenas de números a listas de enteros
+    numbers = list(map(int, numbers_str.split(',')))
+    values = list(map(int, values_str.split(',')))
+
+    # Iterar sobre las dos listas y formatear los elementos
+    result = ""
+    for number, value in zip(numbers, values):
+        result += f"{number}={value},"
+
+    # Eliminar la coma extra al final
+    result = result.rstrip(',')
+
+    print("Resultado:", result)
+
     try:
         async with DB() as db:
             query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
