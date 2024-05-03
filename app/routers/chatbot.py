@@ -214,7 +214,7 @@ async def create_reservation(res: Reservation):
             results = await db.execute_query_insert(query=query, params=params)
             return {"message": "Reservation created successfully", "results": results}
     except Exception as e:
-        raise HTTPException(status_code=f"500: {res.user_id}, {res.space_id}, {res.schedule_id}", detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
     
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
@@ -239,23 +239,6 @@ async def create_reservation_bot(res: ReservationBot):
     dates[0] =  date.strftime('%Y-%m-%d')
     dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
 
-    # Dividir la cadena en dos listas
-    numbers_str, values_str = res.user_requirements.split()
-
-    # Convertir las cadenas de números a listas de enteros
-    numbers = list(map(int, numbers_str.split(',')))
-    values = list(map(int, values_str.split(',')))
-
-    # Iterar sobre las dos listas y formatear los elementos
-    result = ""
-    for number, value in zip(numbers, values):
-        result += f"{number}={value},"
-
-    # Eliminar la coma extra al final
-    result = result.rstrip(',')
-
-    print("Resultado:", result)
-
     try:
         async with DB() as db:
             query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
@@ -266,7 +249,7 @@ async def create_reservation_bot(res: ReservationBot):
             schedule_id = results[0][0]
             return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements= "1=1,2=3,4=6"))
     except Exception as e:
-        raise HTTPException(status_code=f"100: {res.user_id}, {res.space_id}, {schedule_id}, {res.user_requirements}, Otros: {dates[0]},  {dates[1]}, {schedule_id}, {result}", detail= str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Get reservations for a specific user
 @router.get("/{user_id}")
