@@ -239,7 +239,8 @@ async def create_reservation_bot(res: ReservationBot):
 
     date = today + timedelta(days=days_count)
     dates[0] =  date.strftime('%Y-%m-%d')
-    dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
+    dates[1] = "{:02d}:00:00".format(int(dates[1])) # HH:MM:SS
+    print(dates)
 
     # Dividir la cadena en dos listas
     numbers_str, values_str = res.user_requirements.split()
