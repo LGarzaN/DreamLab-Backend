@@ -54,12 +54,12 @@ async def get_Zones():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/space/{SpaceName}")
+@router.get("/spaces/{SpaceName}")
 async def get_space_description(SpaceName: str):
     try:
         async with DB() as db:
             query = '''
-                SELECT [SpaceId], [Description]
+                SELECT [SpaceId], [Name], [Description]
                 FROM [dbo].[Space]
                 WHERE LOWER(Name) = LOWER(?);
             '''
@@ -71,7 +71,8 @@ async def get_space_description(SpaceName: str):
             for row in results:
                 formatted_results.append({
                     'SpaceId': row[0],
-                    'Description': row[1]
+                    'Name': row[1],
+                    'Description': row[2]
                 })
             return formatted_results
     except Exception as e:
@@ -100,17 +101,17 @@ async def get_schedule(SpaceId: int, Day: str):
             params = (SpaceId, final_day,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            available_hours = []
+            #available_hours = []
 
             for row in results:
-                available_hours.append(row[0].strftime('%H:%M'))  # Guardar todas las horas disponibles
+                #available_hours.append(row[0].strftime('%H:%M'))  # Guardar todas las horas disponibles
                 formatted_results.append({
                     'StartHour': row[0],
                     'EndHour': row[1]
                 })
 
             # Insertar la lista de horas disponibles como primer elemento del contenido
-            formatted_results.insert(0, {'StartHour': ",".join(map(str, available_hours)), 'EndHour': None})
+            #formatted_results.insert(0, {'StartHour': ",".join(map(str, available_hours)), 'EndHour': None})
 
             return formatted_results
     except Exception as e:
@@ -125,16 +126,16 @@ async def get_space_requirements(SpaceId: int):
             params = (SpaceId,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            requirement_ids = []
-            requirements_text = []
+            #requirement_ids = []
+            #requirements_text = []
 
             for row in results:
                 requirement_id = row[1]
                 requirement_name = row[2]
                 max_quantity = row[3]
 
-                requirement_ids.append(requirement_id)
-                requirements_text.append(f"{requirement_name} (Max {max_quantity})")
+                #requirement_ids.append(requirement_id)
+                #requirements_text.append(f"{requirement_name} (Max {max_quantity})")
 
                 formatted_results.append({
                     'SpaceId': row[0],
@@ -144,7 +145,7 @@ async def get_space_requirements(SpaceId: int):
                 })
 
             # Insertar la lista de IDs de requisitos como primer elemento del contenido
-            formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\r\n'.join(requirements_text)})
+            #formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\r\n'.join(requirements_text)})
 
             return formatted_results
     except Exception as e:
