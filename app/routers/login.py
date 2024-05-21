@@ -6,14 +6,18 @@ from dotenv import load_dotenv
 from app.dependencies import check_api_key
 import os
 import bcrypt
+import time
+from pydantic import BaseModel
 
 
 load_dotenv()
 
+login_variable = False
+
 router = APIRouter(
     prefix="/login",
-    tags=["login"],
-    dependencies=[Depends(check_api_key)]
+    tags=["login"]
+    # dependencies=[Depends(check_api_key)]
 )
 
 @router.post("/")
@@ -53,3 +57,28 @@ async def create_user(user: User):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/id")
+def id_login():
+    global login_variable
+    print("Waiting for login")
+    while login_variable == False:
+        time.sleep(1)
+    login_variable = False
+    return {"message": "Logged in"}
+
+
+class TagId(BaseModel):
+    TagId: str
+
+@router.post("/id/iot")
+async def id_login_iot(body: TagId):
+    global login_variable
+    async with DB() as db:
+        query = f"SELECT * FROM [User] WHERE TagId = '{body.TagId}'"
+        results = await db.execute_query(query)
+        if len(results) > 0:
+            login_variable = True
+            return {"message": "Logged in"}
+        else:
+            raise HTTPException(status_code=401, detail="Unauthorized")
