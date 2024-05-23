@@ -97,10 +97,10 @@ async def assign_spaces():
                 update_query += f"UPDATE [dbo].[PendingReservation] SET Processed = 1 WHERE PendingReservationId = {row[0]};\n"
                 if row[2] not in requests:
                     requests[row[2]] = PriorityQueue()
-                requests[row[2]].put(row, row[6])
+                requests[row[2]].put((row[6], row))
             
             for key in requests:
-                top = requests[key].get()
+                top = requests[key].get()[1]
                 res = Reservation(user_id=top[1], space_id=top[4], schedule_id=key, user_requirements=top[3])
                 await create_confirmed_reservation(res)
             
