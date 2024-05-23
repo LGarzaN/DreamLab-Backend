@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from app.models import Reservation, DeleteReservation, ReservationBot
 from app.db import DB
 from app.dependencies import check_api_key
@@ -116,13 +116,19 @@ async def get_pending_reservations(user_id: int):
 
 
 @router.delete("/")
-async def delete_reservation(body: DeleteReservation):
+async def delete_reservation(body: DeleteReservation, reservation_type: str = Header(None)):
     try:
-        print(body)
         async with DB() as db:
-            query = "EXEC CancelReservation @groupCode = ?, @userId = ?;"
-            params = (body.group_code, body.user_id)
-            results = await db.execute_query_insert(query, params)
-            return {"message": "Reservation deleted successfully"}
+            print(reservation_type)
+            if reservation_type == "pending":
+                query = "DELETE FROM [dbo].[PendingReservation] WHERE [PendingReservationId] = ? AND [UserId] = ?;"
+                params = (body.reservation_id, body.user_id)
+                results = await db.execute_query_insert(query, params)
+                return {"message": "Reservation deleted successfully"}
+            else:
+                query = "EXEC CancelReservation @groupCode = ?, @userId = ?;"
+                params = (body.group_code, body.user_id)
+                results = await db.execute_query_insert(query, params)
+                return {"message": "Reservation deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
