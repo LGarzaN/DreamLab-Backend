@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.models import Reservation, DeleteReservation, ReservationBot
 from app.db import DB
 from app.dependencies import check_api_key
-from uuid import uuid4
-from app.functions import get_requirements_query
+from app.functions import create_confirmed_reservation
 
 router = APIRouter(
     prefix="/reservations",
@@ -42,39 +41,13 @@ async def create_reservation(res: Reservation):
     """
     try:
         async with DB() as db:
-            group_code = str(uuid4())[:7]
-            query ='''
-                DECLARE @GroupID INT;
-                INSERT INTO [dbo].[ReservationGroup] (GroupCode)
-                OUTPUT INSERTED.GroupID
-                VALUES (?);
-
-                SET @GroupID = SCOPE_IDENTITY(); 
-
-                INSERT INTO [dbo].[Reservation] (GroupId, UserId, SpaceId, ScheduleId, UserRequirements) 
-                VALUES (@GroupID, ?, ?, ?, '');
-
-                UPDATE [dbo].[Schedule] SET Occupied = 1 WHERE ScheduleId = ?;
-
-                MERGE INTO [dbo].[Statistic] AS target
-                USING (SELECT ? AS UserId) AS source (UserId)
-                ON target.UserId = source.UserId
-                WHEN MATCHED THEN
-                    UPDATE SET Reservations = target.Reservations + 1,
-                            StudyHours = target.StudyHours + 1
-                WHEN NOT MATCHED THEN
-                    INSERT (UserId, Reservations, StudyHours)
-                    VALUES (source.UserId, 1, 1);
-
-              '''
-            if len(res.user_requirements) > 0:
-                query += get_requirements_query(res.user_requirements)
-            print(query)
-            params = (group_code, res.user_id, res.space_id, res.schedule_id, res.schedule_id, res.user_id)
-            results = await db.execute_query_insert(query=query, params=params)
-            return {"message": "Reservation created successfully", "results": results}
+            query = "INSERT INTO [dbo].[PendingReservation] (UserId, SpaceId, ScheduleId, UserRequirements) VALUES (?, ?, ?, ?);"
+            params = (res.user_id, res.space_id, res.schedule_id, res.user_requirements)
+            results = await db.execute_query_insert(query, params)
+            return {"message": "Reservation created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+   
     
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
@@ -116,6 +89,26 @@ async def get_reservations(user_id: int):
                     'RequirementsId': row[5],
                     'RequirementsQuantity': row[6],
                     'GroupCode': row[7]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/pending/{user_id}")
+async def get_pending_reservations(user_id: int):
+    try:
+        async with DB() as db:
+            query = "EXEC GetPendingReservations @UserId = ?"
+            params = (user_id,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'PendingReservationId': row[0],
+                    'SpaceId': row[1],
+                    'Day': row[2].strftime('%Y-%m-%d'),
+                    'StartHour': row[3].strftime('%H:%M'),
+                    'EndHour': row[4].strftime('%H:%M'),
                 })
             return formatted_results
     except Exception as e:
