@@ -105,8 +105,6 @@ async def assign_spaces():
                 await create_confirmed_reservation(res)
             
             await db.execute_query_insert(query=update_query)
-
-
     except Exception as e:
         print(str(e))
         raise e
