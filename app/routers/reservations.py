@@ -121,7 +121,7 @@ async def delete_reservation(body: DeleteReservation, reservation_type: str = He
         async with DB() as db:
             print(reservation_type)
             if reservation_type == "pending":
-                query = "DELETE FROM [dbo].[PendingReservation] WHERE [PendingReservationId] = ? AND [UserId] = ?;"
+                query = "UPDATE [dbo].[PendingReservation] SET Deleted = 1 WHERE [PendingReservationId] = ? AND [UserId] = ?;"
                 params = (body.reservation_id, body.user_id)
                 results = await db.execute_query_insert(query, params)
                 return {"message": "Reservation deleted successfully"}
