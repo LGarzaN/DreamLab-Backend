@@ -28,7 +28,7 @@ async def login(user: User):
             results = await db.execute_query(query, params)
 
             if bcrypt.checkpw(user.password.encode('utf-8'), results[0][2].encode('utf-8')):
-                token = await jwt.encode({
+                token = jwt.encode({
                     "username": user.username, 
                     "userId": results[0][0],
                     "name": results[0][1],
