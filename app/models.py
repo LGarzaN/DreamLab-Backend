@@ -4,9 +4,11 @@ class User(BaseModel):
     username: str = None
     password: str = None
     name: str = None
-    roleId: int = 0
+    role_id: int = 0
     priority: int = 0
     profile_picture: str = None
+    tag_id: str = None
+    pattern_password: str = None
 
 class ChatRequest(BaseModel):
     session_id: str

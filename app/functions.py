@@ -3,6 +3,8 @@ from app.models import Reservation
 from uuid import uuid4
 import datetime
 from queue import PriorityQueue
+import jwt
+import os
 
 def get_requirements_query(reqs : str):
     query = "\n"
@@ -108,3 +110,7 @@ async def assign_spaces():
     except Exception as e:
         print(str(e))
         raise e
+    
+async def sign_jwt(dict):
+    token = jwt.encode(dict, os.getenv('JWT_SECRET'), algorithm='HS256')
+    return token
