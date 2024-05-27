@@ -3,7 +3,6 @@ from app.models import Reservation
 from uuid import uuid4
 import datetime
 from queue import PriorityQueue
-import jwt
 import os
 
 def get_requirements_query(reqs : str):
