@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.models import User
 from app.db import DB
-from jose import jwt
 from dotenv import load_dotenv
 from app.dependencies import check_api_key
 import bcrypt
