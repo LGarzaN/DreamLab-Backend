@@ -4,12 +4,10 @@ from app.db import DB
 from jose import jwt
 from dotenv import load_dotenv
 from app.dependencies import check_api_key
-import os
 import bcrypt
 import time
 from pydantic import BaseModel
-from functions import sign_jwt
-
+from app.functions import sign_jwt
 
 load_dotenv()
 
@@ -45,7 +43,7 @@ async def login(user: User):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/pattern")
+@router.post("/pattern")
 async def pattern_login(user: User):
     try:
         async with DB() as db:
