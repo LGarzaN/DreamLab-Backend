@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.models import User
 from app.db import DB
+import os
+from jose import jwt
 from dotenv import load_dotenv
 from app.dependencies import check_api_key
 import bcrypt
 import time
 from pydantic import BaseModel
-from app.functions import sign_jwt
 
 load_dotenv()
 
@@ -27,15 +28,14 @@ async def login(user: User):
             results = await db.execute_query(query, params)
 
             if bcrypt.checkpw(user.password.encode('utf-8'), results[0][2].encode('utf-8')):
-                data = {
+                token = await jwt.encode({
                     "username": user.username, 
                     "userId": results[0][0],
-                    "name": results[0][3],
-                    "role": results[0][4],
-                    "priority": results[0][5],
-                    "profile picture": results[0][6],
-                }
-                token = await sign_jwt(data)
+                    "name": results[0][1],
+                    "role": results[0][3],
+                    "priority": results[0][4],
+                    "profile picture": results[0][5],
+                }, os.getenv('JWT_SECRET'), algorithm='HS256')
                 return {"token": token}
             else:
                 raise HTTPException(status_code=401, detail="Unauthorized") 
@@ -51,15 +51,14 @@ async def pattern_login(user: User):
             results = await db.execute_query(query, params)
 
             if results[0][0] == user.pattern_password:
-                data = {
+                token = jwt.encode({
                     "username": user.username, 
                     "userId": results[0][1],
                     "name": results[0][2],
                     "role": results[0][3],
                     "priority": results[0][4],
                     "profile picture": results[0][5],
-                }
-                token = await sign_jwt(data)
+                }, os.getenv('JWT_SECRET'), algorithm='HS256')
                 return {"token": token}
             else:
                 raise HTTPException(status_code=401, detail="Unauthorized")
