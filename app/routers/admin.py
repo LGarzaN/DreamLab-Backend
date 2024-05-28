@@ -19,7 +19,7 @@ async def get_Reservations():
         async with DB() as db:
             query = '''
 
-            SELECT [User].[Name], [User].[UserName], [Schedule].[Day], [Schedule].[StartHour], [Schedule].[EndHour], [Space].[Name] AS SpaceName
+            SELECT [User].[Name], [User].[UserName], [Schedule].[Day], [Schedule].[StartHour], [Schedule].[EndHour], [Space].[Name], [Space].[SpaceId], [User].[UserId], [ReservationGroup].[GroupCode]
             FROM [dbo].[User]
             INNER JOIN [dbo].[Reservation]
                 ON [dbo].[User].[UserId] = [dbo].[Reservation].[UserId]
@@ -27,6 +27,8 @@ async def get_Reservations():
                 ON [dbo].[Reservation].[ScheduleId] = [dbo].[Schedule].[ScheduleId]
             INNER JOIN [dbo].[Space]
                 ON [dbo].[Reservation].[SpaceId] = [dbo].[Space].[SpaceId]
+            INNER JOIN [dbo].[ReservationGroup]
+                ON [dbo].[Reservation].[GroupId] = [dbo].[ReservationGroup].[GroupId]
             WHERE [dbo].[Schedule].[Day] >= CAST(GETDATE() AS Date);
 
 
@@ -40,7 +42,6 @@ async def get_Reservations():
                 day = row[2].day
                 month = row[2].strftime('%B')
                 year = row[2].year
-                weekday = row[2].strftime('%A')
                 month_in_spanish = {
                     'January': 'Enero',
                     'February': 'Febrero',
@@ -55,42 +56,53 @@ async def get_Reservations():
                     'November': 'Noviembre',
                     'December': 'Diciembre'
                 }
-                weekday_in_spanish = {
-                    'Monday': 'Lunes',
-                    'Tuesday': 'Martes',
-                    'Wednesday': 'Miércoles',
-                    'Thursday': 'Jueves',
-                    'Friday': 'Viernes',
-                    'Saturday': 'Sábado',
-                    'Sunday': 'Domingo'
-                }
                 formatted_date = f"{day} de {month_in_spanish[month]} {year}"
-                formatted_weekday = weekday_in_spanish[weekday]
 
                 formatted_results.append({
-                    'nombre': f"{row[0]}",
-                    'matricula': f"{row[1]}",
-                    'dia': {formatted_weekday},
-                    'fecha': {formatted_date},
-                    'hora_inicio': f"{row[3].strftime('%H:%M')}",
-                    'hora_fin': f"{row[4].strftime('%H:%M')}",
-                    "espacio": f"{row[5]}"
+                    'Day': f"{row[2]}",
+                    'StartHour': f"{row[3].strftime('%H:%M')}",
+                    'EndHour': f"{row[4].strftime('%H:%M')}",
+                    "SpaceName": f"{row[5]}",
+                    "SpaceId": row[6],
+                    "GroupCode": f"{row[8]}",
+                    'Name': f"{row[0]}",
+                    'Matricula': f"{row[1]}",
+                    'UserId': row[7],
+                    'Fecha': {formatted_date},
                 })
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 
-@router.get("/areas")
-async def get_Areas():
+@router.get("/pending")
+async def get_Pending():
     try:
         async with DB() as db:
             query = '''
 
-            SELECT [Name]
-            FROM [dbo].[Space]
-            
-
+            SELECT 
+                pr.[PendingReservationId], 
+                pr.[UserId], 
+                u.[Name] AS UserName, 
+                u.[Username], 
+                pr.[SpaceId], 
+                sp.[Name] AS SpaceName,
+                s.[Day], 
+                s.[StartHour], 
+                s.[EndHour]
+            FROM 
+                [dbo].[PendingReservation] pr
+            JOIN 
+                [dbo].[Schedule] s ON pr.[ScheduleId] = s.[ScheduleId]
+            JOIN 
+                [dbo].[user] u ON pr.[UserId] = u.[UserId]
+            JOIN 
+                [dbo].[space] sp ON pr.[SpaceId] = sp.[SpaceId]
+            WHERE 
+                pr.[DateCreated] >= CAST(GETDATE() AS Date)
+                AND pr.[Processed] = 0;
 
             '''
             results = await db.execute_query(query)
@@ -99,15 +111,16 @@ async def get_Areas():
             formatted_results = []
             for row in results:
                 formatted_results.append({
-                    'areas': f"{row[0]}"
+                    "PendingReservationId": row[0],
+                    "UserId": row[1],
+                    "Name": row[2],
+                    "Matricula": row[3],
+                    "SpaceId": row[4],
+                    "SpaceName": f"{row[5]}",
+                    "Day": f"{row[6]}",
+                    "StartHour": f"{row[7].strftime('%H:%M')}",
+                    "EndHour": f"{row[8].strftime('%H:%M')}"
                 })
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-#SELECT [Name]
- #               FROM [dbo].[User]
-    
-  #              SELECT s.Name
-   #             FROM Space s
-    #            INNER JOIN Reservation r ON s.SpaceId = r.SpaceId;
