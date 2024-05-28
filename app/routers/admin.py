@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from app.models import Reservation, DeleteReservation, ReservationBot
 from app.db import DB
 from app.dependencies import check_api_key
@@ -74,7 +74,37 @@ async def get_Reservations():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router.get("/reservationstype")
+async def get_Reservations():
+    try:
+        async with DB() as db:
+            query = '''
 
+            SELECT [User].[Name], [User].[UserName], [Schedule].[Day], [Schedule].[StartHour], [Schedule].[EndHour], [Space].[Name], [Space].[SpaceId], [User].[UserId], [ReservationGroup].[GroupCode]
+            FROM [dbo].[User]
+            INNER JOIN [dbo].[Reservation]
+                ON [dbo].[User].[UserId] = [dbo].[Reservation].[UserId]
+            INNER JOIN [dbo].[Schedule]
+                ON [dbo].[Reservation].[ScheduleId] = [dbo].[Schedule].[ScheduleId]
+            INNER JOIN [dbo].[Space]
+                ON [dbo].[Reservation].[SpaceId] = [dbo].[Space].[SpaceId]
+            INNER JOIN [dbo].[ReservationGroup]
+                ON [dbo].[Reservation].[GroupId] = [dbo].[ReservationGroup].[GroupId]
+            WHERE [dbo].[Schedule].[Day] >= CAST(GETDATE() AS Date);
+
+
+            '''
+            results = await db.execute_query(query)
+
+            
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Day': f"{row[2]}"
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/pending")
 async def get_Pending():
@@ -102,7 +132,8 @@ async def get_Pending():
                 [dbo].[space] sp ON pr.[SpaceId] = sp.[SpaceId]
             WHERE 
                 pr.[DateCreated] >= CAST(GETDATE() AS Date)
-                AND pr.[Processed] = 0;
+                AND pr.[Processed] = 0
+                AND pr.[Deleted] = 0;
 
             '''
             results = await db.execute_query(query)
@@ -124,3 +155,34 @@ async def get_Pending():
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/pending2")
+async def get_pending():
+    try:
+        async with DB() as db:
+            query = '''
+            SELECT * FROM [dbo].[PendingReservation]
+            '''
+            results = await db.execute_query(query)
+            
+            # Si results es una lista de tuplas, se necesita acceder a los nombres de las columnas desde el primer resultado
+            if results:
+                columns_query = '''
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'PendingReservation'
+                '''
+                columns_result = await db.execute_query(columns_query)
+                columns = [column[0] for column in columns_result]
+
+                # Convertir los resultados a una lista de diccionarios
+                formatted_results = [dict(zip(columns, row)) for row in results]
+            else:
+                formatted_results = []
+
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
