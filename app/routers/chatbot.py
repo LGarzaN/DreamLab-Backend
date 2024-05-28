@@ -53,7 +53,46 @@ async def get_Zones():
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@router.get("/spaces/zone/{zone_name}")
+async def get_spaces_by_zone(zone_name: str):
+    try:
+        async with DB() as db:
+            # First, get the ZoneId for the given zone name
+            query = '''
+                SELECT [ZoneId]
+                FROM [dbo].[Zone]
+                WHERE ZoneName = ?;
+            '''
+            params = (zone_name,)
+            zone = await db.execute_query(query, params)
+
+            if not zone:
+                raise HTTPException(status_code=404, detail="Zone not found")
+
+            zone_id = zone[0][0]
+
+            # Then, get all spaces for that ZoneId
+            query = '''
+                SELECT [SpaceId], [Name], [Description]
+                FROM [dbo].[Space]
+                WHERE ZoneId = ?;
+            '''
+            params = (zone_id,)
+            results = await db.execute_query(query, params)
+
+            # Format results
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'SpaceId': row[0],
+                    'Name': row[1],
+                    'Description': row[2]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/spaces/{SpaceName}")
 async def get_space_description(SpaceName: str):
     try:
