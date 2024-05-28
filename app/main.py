@@ -26,7 +26,7 @@ app.include_router(login.router)
 
 @app.get("/")
 async def root():
-    return {"message": "V7", "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    return {"message": "V8"}
     
 
 load_dotenv()
