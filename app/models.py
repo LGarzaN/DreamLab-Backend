@@ -11,7 +11,7 @@ class User(BaseModel):
     pattern_password: str = None
 
 class ChatRequest(BaseModel):
-    session_id: str
+    session_id: str = None
     prompt: str
 
 class Reservation(BaseModel):
