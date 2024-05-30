@@ -20,6 +20,12 @@ class Reservation(BaseModel):
     user_requirements: str = None
     space_id: int
 
+class ReservationAdmin(BaseModel):
+    username: str
+    schedule_id: int
+    user_requirements: str = None
+    space_id: int
+
 class ReservationBot(BaseModel):
     user_id: int    
     schedule: str

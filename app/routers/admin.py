@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
-from app.models import Reservation, DeleteReservation, ReservationBot
+from app.models import Reservation, DeleteReservation, ReservationBot, ReservationAdmin
 from app.db import DB
 from app.dependencies import check_api_key
 from uuid import uuid4
@@ -184,5 +184,30 @@ async def get_pending():
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
+
+
+@router.post("/create")
+async def create_reservation(res: ReservationAdmin):
+    """
+    Crear una reserva en la base de datos usando el nombre de usuario.
+
+    Formato de userRequirements: "1=1,2=3,4=6"
+    donde el primer número es el id del requerimiento y el segundo la cantidad.
+    """
+    try:
+        async with DB() as db:
+
+            user_query = "SELECT UserId FROM [dbo].[User] WHERE Username = ?;"
+            user_results = await db.execute_query(user_query, (res.username)) 
+            
+            if not user_results:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            user_id = user_results[0][0] 
+
+            reservation_query = "INSERT INTO [dbo].[PendingReservation] (UserId, SpaceId, ScheduleId, UserRequirements) VALUES (?, ?, ?, ?);"
+            params = (user_id, res.space_id, res.schedule_id, res.user_requirements)
+            results = await db.execute_query_insert(reservation_query, params)
+            return {"message": "Reservation created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
