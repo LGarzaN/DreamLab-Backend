@@ -246,37 +246,6 @@ async def get_space_requirements(SpaceId: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/schedulesprovider")
-async def get_schedules_pro():
-    """
-    Get all the schedules.
-
-    Returns:
-        - List[Dict[str, Any]]: A list of dictionaries containing the ScheduleId, SpaceId, Day, StartHour, EndHour, and Occupied status of the schedules.
-
-    Raises:
-        - HTTPException: If there is an error while executing the query.
-    """
-    try:
-        async with DB() as db:
-            query = "SELECT * FROM [dbo].[Schedule]"
-            results = await db.execute_query(query)
-            formatted_results = []
-
-            for row in results:
-                formatted_results.append({
-                    'ScheduleId': row[0],
-                    'SpaceId': row[1],
-                    'Day': row[2],
-                    'StartHour': row[3].strftime('%H:%M'),
-                    'EndHour': row[4].strftime('%H:%M'),
-                    'Occupied': row[5]
-                })
-            return formatted_results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/create")
 async def create_reservation(res: Reservation):
     """

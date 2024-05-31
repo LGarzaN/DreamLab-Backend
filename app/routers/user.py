@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.models import Statistic
 from app.db import DB
 from app.dependencies import check_api_key
 from uuid import uuid4
@@ -13,6 +14,21 @@ router = APIRouter(
 
 @router.get("/statistics/{UserId}")
 async def get_statistics(UserId: int):
+    """
+    Retrieve statistics for a specific user.
+
+    Args:
+        UserId (int): The ID of the user.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries containing the statistics for the user. Each dictionary has the following keys:
+            - 'Reservations': The number of reservations made by the user.
+            - 'StudyHours': The total number of study hours for the user.
+            - 'ExploredAreas': The number of areas explored by the user.
+
+    Raises:
+        HTTPException: If there is an error retrieving the statistics from the database.
+    """
     try:
         async with DB() as db:
             query = '''

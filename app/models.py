@@ -30,3 +30,9 @@ class DeleteReservation(BaseModel):
     user_id: int
     group_code: str = None
     reservation_id: int = None
+
+class Statistic(BaseModel):
+    user_id: int
+    reservations: int = 0
+    study_hours: int = 0
+    explored_areas: int = 0

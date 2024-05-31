@@ -3,7 +3,7 @@ import requests
 from app.models import ChatRequest
 from fastapi_utilities import repeat_at
 from app.db import DB
-from .routers import reservations, login, chatbot, admin
+from .routers import reservations, login, chatbot, admin, user
 import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.functions import create_new_schedules, assign_spaces
@@ -14,6 +14,7 @@ app.include_router(reservations.router)
 app.include_router(chatbot.router)
 app.include_router(login.router)
 app.include_router(admin.router)
+app.include_router(user.router)
 
 @app.get("/")
 async def root():
