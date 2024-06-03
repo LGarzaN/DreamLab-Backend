@@ -205,11 +205,11 @@ async def delete_reservation(body: DeleteReservation, reservation_type: str = He
                 query = """
                 DECLARE @GroupId INT
 
-                SELECT @GroupId = GroupId FROM ReservationGroup where GroupCode = '8334AFC'
+                SELECT @GroupId = GroupId FROM ReservationGroup where GroupCode = ?
 
                 UPDATE [dbo].[Reservation] SET Deleted = 1 WHERE GroupId = @GroupId;
                 """
-                params = (body.group_code, body.user_id)
+                params = (body.group_code,)
                 results = await db.execute_query_insert(query, params)
                 return {"message": "Reservation deleted successfully"}
     except Exception as e:
