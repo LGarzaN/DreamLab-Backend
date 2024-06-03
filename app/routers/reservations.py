@@ -126,7 +126,7 @@ async def delete_reservation(body: DeleteReservation, reservation_type: str = He
                 results = await db.execute_query_insert(query, params)
                 return {"message": "Reservation deleted successfully"}
             else:
-                query = "EXEC CancelReservation @groupCode = ?, @userId = ?;"
+                query = "UPDATE [dbo].[Reservation] SET Deleted = 1 WHERE [GroupCode] = ? AND [UserId] = ?;"
                 params = (body.group_code, body.user_id)
                 results = await db.execute_query_insert(query, params)
                 return {"message": "Reservation deleted successfully"}

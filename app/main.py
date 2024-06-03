@@ -16,6 +16,7 @@ app.include_router(login.router)
 
 @app.get("/")
 async def root():
+    await assign_spaces()
     return {"message": "V7", "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     
 
