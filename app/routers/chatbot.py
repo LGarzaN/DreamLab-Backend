@@ -14,6 +14,18 @@ router = APIRouter(
 
 @router.get("/userid/{UserName}")
 async def get_userid(UserName: str):
+    """
+    Get the UserId for a given UserName.
+
+    Parameters:
+        - UserName (str): The username of the user.
+
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries containing the UserId.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
+    """
     try:
         async with DB() as db:
             query = '''
@@ -36,6 +48,15 @@ async def get_userid(UserName: str):
 
 @router.get("/zones")
 async def get_Zones():
+    """
+    Get all the zones.
+
+    Returns:
+        - List[Dict[str, str]]: A list of dictionaries containing the ZoneName and Description.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
+    """
     try:
         async with DB() as db:
             query = '''
@@ -56,6 +77,18 @@ async def get_Zones():
 
 @router.get("/spaces/zone/{zone_name}")
 async def get_spaces_by_zone(zone_name: str):
+    """
+    Get all the spaces for a given zone.
+
+    Parameters:
+        - zone_name (str): The name of the zone.
+
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries containing the SpaceId, Name, and Description of the spaces.
+
+    Raises:
+        - HTTPException: If the zone is not found or there is an error while executing the query.
+    """
     try:
         async with DB() as db:
             # First, get the ZoneId for the given zone name
@@ -95,6 +128,18 @@ async def get_spaces_by_zone(zone_name: str):
 
 @router.get("/spaces/{SpaceName}")
 async def get_space_description(SpaceName: str):
+    """
+    Get the description of a space for a given SpaceName.
+
+    Parameters:
+        - SpaceName (str): The name of the space.
+
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries containing the SpaceId, Name, and Description of the space.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
+    """
     try:
         async with DB() as db:
             query = '''
@@ -119,6 +164,19 @@ async def get_space_description(SpaceName: str):
 
 @router.get("/schedules/{SpaceId}/{Day}")
 async def get_schedule(SpaceId: int, Day: str):
+    """
+    Get the schedule for a given SpaceId and Day.
+
+    Parameters:
+        - SpaceId (int): The ID of the space.
+        - Day (str): The day of the week (e.g., "lunes", "martes", etc.).
+
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries containing the StartHour and EndHour of the schedule.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
+    """
     today = datetime.now()
     actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
     target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(Day.lower())
@@ -140,41 +198,42 @@ async def get_schedule(SpaceId: int, Day: str):
             params = (SpaceId, final_day,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            #available_hours = []
 
             for row in results:
-                #available_hours.append(row[0].strftime('%H:%M'))  # Guardar todas las horas disponibles
                 formatted_results.append({
                     'StartHour': row[0],
                     'EndHour': row[1]
                 })
 
-            # Insertar la lista de horas disponibles como primer elemento del contenido
-            #formatted_results.insert(0, {'StartHour': ",".join(map(str, available_hours)), 'EndHour': None})
-
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    
 @router.get("/requirements/{SpaceId}")
 async def get_space_requirements(SpaceId: int):
+    """
+    Get the requirements for a given SpaceId.
+
+    Parameters:
+        - SpaceId (int): The ID of the space.
+
+    Returns:
+        - List[Dict[str, Any]]: A list of dictionaries containing the SpaceId, RequirementId, RequirementName, and MaxQuantity of the requirements.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
+    """
     try:
         async with DB() as db:
             query = "EXEC GetSpaceRequirements @SpaceId = ?"
             params = (SpaceId,)
             results = await db.execute_query(query, params)
             formatted_results = []
-            #requirement_ids = []
-            #requirements_text = []
 
             for row in results:
                 requirement_id = row[1]
                 requirement_name = row[2]
                 max_quantity = row[3]
-
-                #requirement_ids.append(requirement_id)
-                #requirements_text.append(f"{requirement_name} (Max {max_quantity})")
 
                 formatted_results.append({
                     'SpaceId': row[0],
@@ -183,31 +242,6 @@ async def get_space_requirements(SpaceId: int):
                     'MaxQuantity': max_quantity
                 })
 
-            # Insertar la lista de IDs de requisitos como primer elemento del contenido
-            #formatted_results.insert(0, {'RequirementsId': ",".join(map(str, requirement_ids)), 'Requirement': '\r\n'.join(requirements_text)})
-
-            return formatted_results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/schedulesprovider")
-async def get_schedules_pro():
-    try:
-        async with DB() as db:
-            query = "SELECT * FROM [dbo].[Schedule]"
-            results = await db.execute_query(query)
-            formatted_results = []
-            print(results)
-            for row in results:
-                formatted_results.append({
-                    'ScheduleId': row[0],
-                    'SpaceId': row[1],
-                    'Day': row[2],
-                    'StartHour': row[3].strftime('%H:%M'),
-                    'EndHour': row[4].strftime('%H:%M'),
-                    'Occupied': row[5]
-                })
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -215,59 +249,42 @@ async def get_schedules_pro():
 @router.post("/create")
 async def create_reservation(res: Reservation):
     """
-    Crear una reserva en la base de datos
+    Create a reservation in the database.
 
-    formato de userRequirements: "1=1,2=3,4=6"
-    donde 1 es el id del requerimiento y 1 es la cantidad
+    Parameters:
+        - res (Reservation): The reservation details.
+
+    Returns:
+        - Dict[str, str]: A dictionary containing a success message.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
     """
     try:
         async with DB() as db:
-            group_code = str(uuid4())[:7]
-            query ='''
-                DECLARE @GroupID INT;
-                INSERT INTO [dbo].[ReservationGroup] (GroupCode)
-                OUTPUT INSERTED.GroupID
-                VALUES (?);
-
-                SET @GroupID = SCOPE_IDENTITY(); 
-
-                INSERT INTO [dbo].[Reservation] (GroupId, UserId, SpaceId, ScheduleId, UserRequirements) 
-                VALUES (@GroupID, ?, ?, ?, '');
-
-                UPDATE [dbo].[Schedule] SET Occupied = 1 WHERE ScheduleId = ?;
-
-                MERGE INTO [dbo].[Statistic] AS target
-                USING (SELECT ? AS UserId) AS source (UserId)
-                ON target.UserId = source.UserId
-                WHEN MATCHED THEN
-                    UPDATE SET Reservations = target.Reservations + 1,
-                            StudyHours = target.StudyHours + 1
-                WHEN NOT MATCHED THEN
-                    INSERT (UserId, Reservations, StudyHours)
-                    VALUES (source.UserId, 1, 1);
-
-              '''
-            if len(res.user_requirements) > 0:
-                query += get_requirements_query(res.user_requirements)
-            print(query)
-            params = (group_code, res.user_id, res.space_id, res.schedule_id, res.schedule_id, res.user_id)
-            results = await db.execute_query_insert(query=query, params=params)
-            return {"message": "Reservation created successfully", "results": results}
+            query = "INSERT INTO [dbo].[PendingReservation] (UserId, SpaceId, ScheduleId, UserRequirements) VALUES (?, ?, ?, ?);"
+            params = (res.user_id, res.space_id, res.schedule_id, res.user_requirements)
+            results = await db.execute_query_insert(query, params)
+            return {"message": "Reservation created successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"fallo en create_reservation: {res.space_id}, {res.schedule_id}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/create/bot")
 async def create_reservation_bot(res: ReservationBot):
     """
-    Crear una reserva a traves de chatbot
+    Create a reservation through the chatbot.
 
-    formato de schedule: "AAAA-MM-DD HH:MM:SS"
-    Ejemplo: "2021-06-01 08:00:00"
+    Parameters:
+        - res (ReservationBot): The reservation details.
+
+    Returns:
+        - Dict[str, str]: A dictionary containing a success message.
+
+    Raises:
+        - HTTPException: If there is an error while executing the query.
     """
-    
     dates = res.schedule.split(" ")
 
-    
     today = datetime.now()
     actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
     target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
@@ -310,89 +327,26 @@ async def create_reservation_bot(res: ReservationBot):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/prueba/{schedule}/{requirements}")
-async def calculate_dates(schedule: str, user_requirements: str):
-    dates = schedule.split(" ")
-
-    today = datetime.now()
-    actual_day = today.weekday()  
-    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
-
-    if actual_day <= target_day:
-        days_count = target_day - actual_day
-    else:
-        days_count = 7 - (actual_day - target_day)
-
-    date = today + timedelta(days=days_count)
-    dates[0] = date.strftime('%Y-%m-%d')
-    dates[1] = "{:02d}:00:00".format(int(dates[1])) 
-
-    numbers_str, values_str = user_requirements.split()
-
-    numbers = list(map(int, numbers_str.split(',')))
-    values = list(map(int, values_str.split(',')))
-
-    result = ""
-    for number, value in zip(numbers, values):
-        result += f"{number}={value},"
-
-    result = result.rstrip(',')
-
-    return {"date_1": dates[0], "date_2": dates[1], "result": result}
-
-"""
-@router.post("/create/bot")
-async def create_reservation_bot(res: ReservationBot):
-
-    dates = res.schedule.split(" ")
-
-    today = datetime.now()
-    actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
-    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(dates[0].lower())
-
-    if actual_day <= target_day:
-        days_count = target_day - actual_day
-    else:
-        days_count = 7 - (actual_day - target_day)
-
-    date = today + timedelta(days=days_count)
-    dates[0] =  date.strftime('%Y-%m-%d')
-    dates[1] = "{:02d}:00:00".format(dates[1]) # HH:MM:SS
-
-    # Dividir la cadena en dos listas
-    numbers_str, values_str = res.user_requirements.split()
-
-    # Convertir las cadenas de números a listas de enteros
-    numbers = list(map(int, numbers_str.split(',')))
-    values = list(map(int, values_str.split(',')))
-
-    # Iterar sobre las dos listas y formatear los elementos
-    result = ""
-    for number, value in zip(numbers, values):
-        result += f"{number}={value},"
-
-    # Eliminar la coma extra al final
-    result = result.rstrip(',')
-
-    print("Resultado:", result)
-
-    try:
-        async with DB() as db:
-            query = "SELECT [ScheduleId] from dbo.Schedule WHERE [Day] = ? AND [StartHour] = ? AND [SpaceId] = ? AND [Occupied] = 0;"
-            params = (dates[0], dates[1], res.space_id)
-            results = await db.execute_query(query, params)
-            if len(results) == 0:
-                raise HTTPException(status_code=404, detail="Schedule not found or already occupied")
-            schedule_id = results[0][0]
-            return await create_reservation(Reservation(user_id=res.user_id, space_id=res.space_id, schedule_id=int(schedule_id), user_requirements= "1=1,2=3,4=6"))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-"""
-
-
 # Get reservations for a specific user
 @router.get("/{user_id}")
 async def get_reservations(user_id: int):
+    """
+    Retrieves reservation details for a given user ID.
+
+    Args:
+        user_id (int): The ID of the user.
+
+    Returns:
+        list: A list of dictionaries containing reservation details. Each dictionary contains the following keys:
+            - 'Day': The date of the reservation in the format 'YYYY-MM-DD'.
+            - 'StartHour': The start time of the reservation in the format 'HH:MM'.
+            - 'EndHour': The end time of the reservation in the format 'HH:MM'.
+            - 'SpaceName': The name of the reserved space.
+            - 'SpaceId': The ID of the reserved space.
+            - 'RequirementsId': The ID of the reservation requirements.
+            - 'RequirementsQuantity': The quantity of reservation requirements.
+            - 'GroupCode': The group code associated with the reservation.
+    """
     try:
         async with DB() as db:
             query = "EXEC GetReservationDetails @UserId = ?"
@@ -417,6 +371,18 @@ async def get_reservations(user_id: int):
 
 @router.delete("/")
 async def delete_reservation(body: DeleteReservation):
+    """
+    Deletes a reservation based on the provided group code and user ID.
+
+    Args:
+        body (DeleteReservation): An instance of the DeleteReservation model containing the group code and user ID.
+
+    Returns:
+        dict: A dictionary with a "message" key indicating the success of the deletion.
+
+    Raises:
+        HTTPException: If an error occurs during the deletion process.
+    """
     try:
         print(body)
         async with DB() as db:

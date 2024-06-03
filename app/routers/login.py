@@ -21,6 +21,18 @@ router = APIRouter(
 
 @router.post("/")
 async def login(user: User):
+    """
+    Authenticates a user by checking their username and password.
+
+    Args:
+        user (User): The user object containing the username and password.
+
+    Returns:
+        dict: A dictionary containing the authentication token if the user is authenticated.
+
+    Raises:
+        HTTPException: If the user is not authenticated or an error occurs during the authentication process.
+    """
     try: 
         async with DB() as db:
             query = "EXEC SearchUser @p_Username = ?;"
@@ -44,6 +56,18 @@ async def login(user: User):
     
 @router.post("/pattern")
 async def pattern_login(user: User):
+    """
+    Endpoint for pattern login.
+
+    Parameters:
+    - user (User): User object containing the username and pattern password.
+
+    Returns:
+    - dict: Dictionary containing the JWT token if the pattern password is correct.
+
+    Raises:
+    - HTTPException: If the pattern password is incorrect (status_code=401) or if there is a server error (status_code=500).
+    """
     try:
         async with DB() as db:
             query = "SELECT PatternPassword, UserId, Name, RoleId, priority, ProfilePicture from [dbo].[User] WHERE Username = ?"
@@ -67,6 +91,18 @@ async def pattern_login(user: User):
     
 @router.post("/create")
 async def create_user(user: User):
+    """
+    Create a new user in the database.
+
+    Args:
+        user (User): The user object containing the user's information.
+
+    Returns:
+        dict: A dictionary containing the message and the results of the user creation.
+
+    Raises:
+        HTTPException: If there is an error while creating the user.
+    """
     try: 
         async with DB() as db:
             hashed_password = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
@@ -95,6 +131,18 @@ class TagId(BaseModel):
 
 @router.post("/id/iot")
 async def id_login_iot(body: TagId):
+    """
+    Endpoint for logging in with an IoT device using a TagId.
+
+    Args:
+        body (TagId): The TagId of the user.
+
+    Returns:
+        dict: A dictionary with the message "Logged in" if the login is successful.
+
+    Raises:
+        HTTPException: If the login is unsuccessful, an HTTPException with status code 401 (Unauthorized) is raised.
+    """
     global login_variable
     async with DB() as db:
         query = f"SELECT * FROM [User] WHERE TagId = '{body.TagId}'"
