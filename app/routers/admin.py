@@ -644,7 +644,48 @@ async def get_pending():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/reservationsexcel")
+async def get_Reservations():
+    try:
+        async with DB() as db:
+            query = '''
 
+            SELECT [User].[Name], [User].[UserName], [Schedule].[Day], [Schedule].[StartHour], [Schedule].[EndHour], [Space].[Name], [Space].[SpaceId], [User].[UserId], [ReservationGroup].[GroupCode], [Reservation].[Deleted]
+            FROM [dbo].[User]
+            INNER JOIN [dbo].[Reservation]
+                ON [dbo].[User].[UserId] = [dbo].[Reservation].[UserId]
+            INNER JOIN [dbo].[Schedule]
+                ON [dbo].[Reservation].[ScheduleId] = [dbo].[Schedule].[ScheduleId]
+            INNER JOIN [dbo].[Space]
+                ON [dbo].[Reservation].[SpaceId] = [dbo].[Space].[SpaceId]
+            INNER JOIN [dbo].[ReservationGroup]
+                ON [dbo].[Reservation].[GroupId] = [dbo].[ReservationGroup].[GroupId]
+            WHERE 
+                [dbo].[Schedule].[Day] >= DATEADD(day, -30, CAST(GETDATE() AS Date))
+
+
+            '''
+            results = await db.execute_query(query)
+
+            
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Day': f"{row[2]}",
+                    'StartHour': f"{row[3].strftime('%H:%M')}",
+                    'EndHour': f"{row[4].strftime('%H:%M')}",
+                    "SpaceName": f"{row[5]}",
+                    "SpaceId": row[6],
+                    "GroupCode": f"{row[8]}",
+                    'Name': f"{row[0]}",
+                    'Matricula': f"{row[1]}",
+                    'UserId': row[7],
+                    'Fecha': row[2],
+                    'Eliminado': row[9]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
