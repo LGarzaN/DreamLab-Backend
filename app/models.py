@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List 
 
 class User(BaseModel):
     username: str = None
@@ -36,3 +37,6 @@ class DeleteReservation(BaseModel):
     user_id: int
     group_code: str = None
     reservation_id: int = None
+
+class AreasFrecuentes(BaseModel):
+    spaceid: List[int]
