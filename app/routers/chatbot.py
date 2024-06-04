@@ -239,6 +239,9 @@ async def get_schedule_by_hour(SpaceId: int, Day: str, Hour: str):
                     'EndHour': row[1]
                 })
 
+            if len(formatted_results) == 0:
+                return {"message": "Horario no disponible"}
+
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
