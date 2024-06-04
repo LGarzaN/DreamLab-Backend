@@ -40,3 +40,9 @@ class DeleteReservation(BaseModel):
 
 class AreasFrecuentes(BaseModel):
     spaceid: List[int]
+      
+class Statistic(BaseModel):
+    user_id: int
+    reservations: int = 0
+    study_hours: int = 0
+    explored_areas: int = 0

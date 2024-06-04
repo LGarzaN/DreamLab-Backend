@@ -41,7 +41,8 @@ async def create_confirmed_reservation(res: Reservation):
                 WHEN NOT MATCHED THEN
                     INSERT (UserId, Reservations, StudyHours)
                     VALUES (source.UserId, 1, 1);
-
+                
+                INSERT INTO [dbo].[UserRequirements] (GroupId, RequirementId, Quantity) VALUES (@GroupID, 1, 1);
               '''
             if len(res.user_requirements) > 0:
                 query += get_requirements_query(res.user_requirements)
@@ -109,7 +110,3 @@ async def assign_spaces():
     except Exception as e:
         print(str(e))
         raise e
-    
-async def sign_jwt(dict):
-    token = jwt.encode(dict, os.getenv('JWT_SECRET'), algorithm='HS256')
-    return token
