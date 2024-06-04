@@ -209,6 +209,41 @@ async def get_schedule(SpaceId: int, Day: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/schedules/{SpaceId}/{Day}/{Hour}")
+async def get_schedule_by_hour(SpaceId: int, Day: str, Hour: str):
+    today = datetime.now()
+    actual_day = today.weekday()  # 0 para lunes, 1 para martes, ..., 6 para domingo
+    target_day = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].index(Day.lower())
+
+    if actual_day <= target_day:
+        days_count = target_day - actual_day
+    else:
+        days_count = 7 - (actual_day - target_day)
+
+    date = today + timedelta(days=days_count)
+    final_day = date.strftime('%Y-%m-%d')
+    try:
+        async with DB() as db:
+            query = '''
+                SELECT [StartHour], [EndHour]
+                FROM [dbo].[Schedule] 
+                WHERE [SpaceId] = ? AND [Day] = ? AND [StartHour] = ? AND [Occupied] = 0;
+                '''
+            params = (SpaceId, final_day, Hour,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+
+            for row in results:
+                formatted_results.append({
+                    'StartHour': row[0],
+                    'EndHour': row[1]
+                })
+
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/requirements/{SpaceId}")
 async def get_space_requirements(SpaceId: int):
     """
