@@ -24,10 +24,10 @@ async def root():
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
-    chatbot_url = "https://dreamlabchatbot.azurewebsites.net/chat/"
+    chatbot_url = "https://dlchatbot2.azurewebsites.net/chat/"
     data = {
-        "session_id": chat_request.session_id,
-        "prompt": chat_request.prompt
+        "thread_id": chat_request.session_id,
+        "message": chat_request.prompt
     }
     response = requests.post(chatbot_url, json=data)
     return response.json()
