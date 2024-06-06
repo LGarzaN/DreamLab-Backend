@@ -131,9 +131,8 @@ async def get_reservations(user_id: int):
                     'EndHour': row[2].strftime('%H:%M'),
                     'SpaceName': row[3],
                     'SpaceId': row[4],
-                    'RequirementsId': row[5],
-                    'RequirementsQuantity': row[6],
-                    'GroupCode': row[7]
+                    'UserRequirements': row[5],
+                    'GroupCode': row[6]
                 })
             return formatted_results
     except Exception as e:
