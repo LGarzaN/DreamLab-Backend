@@ -38,15 +38,14 @@ async def login(user: User):
             query = "EXEC SearchUser @p_Username = ?;"
             params = (user.username)
             results = await db.execute_query(query, params)
-
             if bcrypt.checkpw(user.password.encode('utf-8'), results[0][2].encode('utf-8')):
                 token = jwt.encode({
                     "username": user.username, 
                     "userId": results[0][0],
-                    "name": results[0][1],
-                    "role": results[0][3],
-                    "priority": results[0][4],
-                    "profile picture": results[0][5],
+                    "name": results[0][3],
+                    "role": results[0][4],
+                    "priority": results[0][5],
+                    "profile picture": results[0][6],
                 }, os.getenv('JWT_SECRET'), algorithm='HS256')
                 return {"token": token}
             else:
