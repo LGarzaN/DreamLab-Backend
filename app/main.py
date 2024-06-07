@@ -24,13 +24,16 @@ async def root():
 
 @app.post("/chat")
 async def chat(chat_request: ChatRequest):
-    chatbot_url = "https://dlchatbot2.azurewebsites.net/chat/"
-    data = {
-        "thread_id": chat_request.session_id,
-        "message": chat_request.prompt
-    }
-    response = requests.post(chatbot_url, json=data)
-    return response.json()
+    try:
+        chatbot_url = "https://dlchatbot2.azurewebsites.net/chat/"
+        data = {
+            "thread_id": chat_request.session_id,
+            "message": chat_request.prompt
+        }
+        response = requests.post(chatbot_url, json=data)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/areas")
 async def get_areas():
