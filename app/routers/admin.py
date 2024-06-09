@@ -723,7 +723,12 @@ async def get_available_spaces():
         async with DB() as db:
             sql = "EXEC GetReservationsForCurrentHour"
             results = await db.execute_query(sql)
-            formatted_results = {key: value for key, value in results}
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'SpaceId': row[0],
+                    'Reservations': row[1]
+                })
 
             return formatted_results
     except Exception as e:
