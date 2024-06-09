@@ -688,21 +688,6 @@ async def get_Reservations():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @router.get("/infotablas")
 async def get_pending():
     try:
@@ -730,3 +715,17 @@ async def get_pending():
             return formatted_results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/available-spaces")
+async def get_available_spaces():
+    try:
+        async with DB() as db:
+            sql = "EXEC GetReservationsForCurrentHour"
+            results = await db.execute_query(sql)
+            formatted_results = {key: value for key, value in results}
+
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
