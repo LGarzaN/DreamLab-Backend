@@ -213,3 +213,36 @@ async def delete_reservation(body: DeleteReservation, reservation_type: str = He
                 return {"message": "Reservation deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/historial/{user_id}")
+async def get_past_reservations(user_id: int):
+    try:
+        async with DB() as db:
+            query = """
+                SELECT 
+                    r.Day, r.StartHour, r.EndHour, s.Name AS SpaceName, s.SpaceId, r.UserRequirements, rg.GroupCode
+                FROM 
+                    dbo.Reservation r
+                    JOIN dbo.ReservationGroup rg ON r.GroupId = rg.GroupId
+                    JOIN dbo.Space s ON r.SpaceId = s.SpaceId
+                WHERE 
+                    r.UserId = ? AND r.Day < GETDATE() AND r.Deleted = 0
+                ORDER BY 
+                    r.Day DESC;
+            """
+            params = (user_id,)
+            results = await db.execute_query(query, params)
+            formatted_results = []
+            for row in results:
+                formatted_results.append({
+                    'Day': row[0].strftime('%Y-%m-%d'),
+                    'StartHour': row[1].strftime('%H:%M'),
+                    'EndHour': row[2].strftime('%H:%M'),
+                    'SpaceName': row[3],
+                    'SpaceId': row[4],
+                    'UserRequirements': row[5],
+                    'GroupCode': row[6]
+                })
+            return formatted_results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
