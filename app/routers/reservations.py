@@ -220,15 +220,19 @@ async def get_past_reservations(user_id: int):
         async with DB() as db:
             query = """
                 SELECT 
-                    r.Day, r.StartHour, r.EndHour, s.Name AS SpaceName, s.SpaceId, r.UserRequirements, rg.GroupCode
+                    s.Day, s.StartHour, s.EndHour, sp.Name AS SpaceName, sp.SpaceId, r.UserRequirements, rg.GroupCode
                 FROM 
                     dbo.Reservation r
-                    JOIN dbo.ReservationGroup rg ON r.GroupId = rg.GroupId
-                    JOIN dbo.Space s ON r.SpaceId = s.SpaceId
+                JOIN 
+                    dbo.ReservationGroup rg ON r.GroupId = rg.GroupId
+                JOIN 
+                    dbo.Space sp ON r.SpaceId = sp.SpaceId
+                JOIN 
+                    dbo.Schedule s ON r.ScheduleId = s.ScheduleId
                 WHERE 
-                    r.UserId = ? AND r.Day < GETDATE() AND r.Deleted = 0
+                    r.UserId = ? AND s.Day < GETDATE() AND r.Deleted = 0
                 ORDER BY 
-                    r.Day DESC;
+                    s.Day DESC;
             """
             params = (user_id,)
             results = await db.execute_query(query, params)
