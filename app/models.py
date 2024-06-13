@@ -34,7 +34,7 @@ class ReservationBot(BaseModel):
     space_id: int
 
 class DeleteReservation(BaseModel):
-    user_id: int
+    user_id: int = None
     group_code: str = None
     reservation_id: int = None
 
