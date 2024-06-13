@@ -423,8 +423,14 @@ async def delete_reservation(body: DeleteReservation):
     try:
         print(body)
         async with DB() as db:
-            query = "EXEC CancelReservation @groupCode = ?, @userId = ?;"
-            params = (body.group_code, body.user_id)
+            query = """
+                DECLARE @GroupId INT
+ 
+                SELECT @GroupId = GroupId FROM ReservationGroup where GroupCode = ?
+
+                UPDATE [dbo].[Reservation] SET Deleted = 1 WHERE GroupId = @GroupId;
+                """
+            params = (body.group_code)
             results = await db.execute_query_insert(query, params)
             return {"message": "Reservation deleted successfully"}
     except Exception as e:
